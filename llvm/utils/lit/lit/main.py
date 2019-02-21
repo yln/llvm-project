@@ -70,6 +70,7 @@ def main(builtinParameters = {}):
 
     order_tests(tests, opts)
 
+    # TODO(yln): move into function
     # Then optionally restrict our attention to a shard of the tests.
     if (opts.numShards is not None) or (opts.runShard is not None):
         num_tests = len(tests)
@@ -96,6 +97,7 @@ def main(builtinParameters = {}):
 
     testing_time = run_tests(tests, litConfig, opts, numTotalTests)
 
+    # move into print_summary
     if not opts.quiet:
         print('Testing Time: %.2fs' % (testing_time,))
 
