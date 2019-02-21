@@ -9,7 +9,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('test_paths',
             nargs='+',
-            help='Files or paths to include in the test suite')
+            metavar="TEST_PATH",
+            help='File or path to include in the test suite')
 
     parser.add_argument("--version",
             dest="show_version",
@@ -99,11 +100,11 @@ def parse_args():
     execution_group.add_argument("--xunit-xml-output",
             dest="xunit_output_file",
             help="Write XUnit-compatible XML test reports to the specified file")
-    execution_group.add_argument("--timeout", # TODO(yln): --[no-]test-timeout
+    execution_group.add_argument("--timeout",
             dest="maxIndividualTestTime",
             help="Maximum time to spend running a single test (in seconds). "
                  "0 means no time limit. [Default: 0]",
-            type=_non_negative_int)
+            type=_non_negative_int) # TODO(yln): --[no-]test-timeout, instead of 0 allowed
     execution_group.add_argument("--max-failures",
             dest="maxFailures",
             help="Stop execution after the given number of failures.",
@@ -131,7 +132,7 @@ def parse_args():
             type=_case_insensitive_regex,
             help="Only run tests with paths matching the given regular expression",
             default=os.environ.get("LIT_FILTER"))
-    selection_group.add_argument("--num-shards",
+    selection_group.add_argument("--num-shards", # TODO(yln): --shards N/M
             dest="numShards",
             metavar="M",
             help="Split testsuite into M pieces and only run one",
