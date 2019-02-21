@@ -69,8 +69,8 @@ def main(builtin_params = {}):
         (run, shards) = opts.shard
         tests = filter_by_shard(tests, run, shards, litConfig)
 
-    if opts.maxTests is not None:
-        tests = tests[:opts.maxTests]
+    if opts.max_tests:
+        tests = tests[:opts.max_tests]
 
     opts.numWorkers = min(len(tests), opts.numWorkers)
 

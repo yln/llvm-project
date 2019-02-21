@@ -131,10 +131,10 @@ def parse_args():
 
     selection_group = parser.add_argument_group("Test Selection")
     selection_group.add_argument("--max-tests",
-            dest="maxTests",
+            dest="max_tests",
             metavar="N",
             help="Maximum number of tests to run",
-            type=int,
+            type=_positive_int,
             default=None)
     selection_group.add_argument("--max-time",
             dest="maxTime",
