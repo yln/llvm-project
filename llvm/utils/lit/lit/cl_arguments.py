@@ -99,7 +99,7 @@ def parse_args():
     execution_group.add_argument("--xunit-xml-output",
             dest="xunit_output_file",
             help="Write XUnit-compatible XML test reports to the specified file")
-    execution_group.add_argument("--timeout",
+    execution_group.add_argument("--timeout", # TODO(yln): --[no-]test-timeout
             dest="maxIndividualTestTime",
             help="Maximum time to spend running a single test (in seconds). "
                  "0 means no time limit. [Default: 0]",
@@ -115,11 +115,11 @@ def parse_args():
             metavar="N",
             help="Maximum number of tests to run",
             type=_positive_int)
-    selection_group.add_argument("--max-time",
-            dest="maxTime",
+    selection_group.add_argument("--max-time", #TODO(yln): --timeout
+            dest="timeout",
             metavar="N",
             help="Maximum time to spend testing (in seconds)",
-            type=float)
+            type=_positive_int)
     selection_group.add_argument("--shuffle",
             help="Run tests in random order",
             action="store_true")

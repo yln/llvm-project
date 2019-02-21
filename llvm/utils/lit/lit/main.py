@@ -179,7 +179,7 @@ def run_tests(tests, litConfig, opts, numTotalTests):
             update_incremental_cache(test)
 
     run = lit.run.create_run(tests, litConfig, opts.numWorkers,
-                             progress_callback, opts.maxTime)
+                             progress_callback, opts.timeout)
 
     try:
         elapsed = execute_in_tmp_dir(run, litConfig)
