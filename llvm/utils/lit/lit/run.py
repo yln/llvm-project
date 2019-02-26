@@ -44,9 +44,6 @@ class Run(object):
         computed. Tests which were not actually executed (for any reason) will
         be given an UNRESOLVED result.
         """
-        if not self.tests:
-            return 0.0
-
         self.failure_count = 0
         self.hit_max_failures = False
 
