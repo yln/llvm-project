@@ -44,7 +44,7 @@ def main(builtin_params = {}):
 
     discovered_tests = lit.discovery.find_tests_for_inputs(litConfig, opts.test_paths)
     if not discovered_tests:
-        sys.stderr.write('\nDid not find any tests.\n')
+        sys.stderr.write('error: did not find any tests.\n')
         sys.exit(2)
 
     # Command line overrides configuration for maxIndividualTestTime.
@@ -69,8 +69,8 @@ def main(builtin_params = {}):
         filtered_tests = discovered_tests
 
     if not filtered_tests:
-        sys.stderr.write('\nFilter did not match any tests '
-                         '(of %d discovered).\n' % len(discovered_tests))
+        sys.stderr.write('error: filter did not match any tests '
+                         '(of %d discovered)\n' % len(discovered_tests))
         sys.exit(2)
 
     determine_order(filtered_tests, opts.order)
@@ -99,11 +99,11 @@ def main(builtin_params = {}):
         write_test_results_xunit(executed_tests, opts)
 
     if litConfig.numErrors:
-        sys.stderr.write('\n%d error(s) in tests.\n' % litConfig.numErrors)
+        sys.stderr.write('\n%d error(s) in tests\n' % litConfig.numErrors)
         sys.exit(2)
 
     if litConfig.numWarnings:
-        sys.stderr.write('\n%d warning(s) in tests.\n' % litConfig.numWarnings)
+        sys.stderr.write('\n%d warning(s) in tests\n' % litConfig.numWarnings)
 
     has_failure = any(t.isFailure() for t in executed_tests)
     if has_failure:
