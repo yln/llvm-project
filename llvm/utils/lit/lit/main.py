@@ -255,7 +255,7 @@ def print_summary(tests, elapsed, opts):
                        ('Timed Out Tests', lit.Test.TIMEOUT)):
         if (lit.Test.XFAIL == code and not opts.show_xfail) or \
            (lit.Test.UNSUPPORTED == code and not opts.show_unsupported) or \
-           (lit.Test.UNRESOLVED == code and (opts.maxFailures is not None)):
+           (lit.Test.UNRESOLVED == code and (opts.max_failures is not None)):
             continue
         elts = byCode.get(code)
         if not elts:

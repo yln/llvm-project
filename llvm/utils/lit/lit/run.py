@@ -17,18 +17,21 @@ def create_run(tests, lit_config, workers, progress_callback, max_failures=None,
                timeout=None):
     assert workers > 0
     if workers == 1:
-        return SerialRun(tests, lit_config, progress_callback, timeout)
-    return ParallelRun(tests, lit_config, progress_callback, timeout, workers)
+        run = SerialRun()
+    else:
+        run = ParallelRun()
+        run.workers = workers
+
+    run.tests = tests
+    run.lit_config = lit_config
+    run.progress_callback = progress_callback
+    run.max_failures = max_failures
+    run.timeout = timeout
+    return run
 
 
 class Run(object):
     """A concrete, configured testing run."""
-
-    def __init__(self, tests, lit_config, progress_callback, timeout):
-        self.tests = tests
-        self.lit_config = lit_config
-        self.progress_callback = progress_callback
-        self.timeout = timeout
 
     def execute(self):
         """
@@ -81,15 +84,11 @@ class Run(object):
         # If we've finished all the tests or too many tests have failed, notify
         # the main thread that we've stopped testing.
         self.failure_count += (result.code == lit.Test.FAIL)  # TODO(yln): this is buggy
-        if self.lit_config.maxFailures and \
-                self.failure_count == self.lit_config.maxFailures:
+        if self.max_failures and self.failure_count == self.max_failures:
             self.hit_max_failures = True
 
 
 class SerialRun(Run):
-    def __init__(self, tests, lit_config, progress_callback, timeout):
-        super(SerialRun, self).__init__(tests, lit_config, progress_callback, timeout)
-
     def _execute(self, deadline):
         # TODO(yln): ignores deadline
         for test in self.tests:
@@ -100,10 +99,6 @@ class SerialRun(Run):
 
 
 class ParallelRun(Run):
-    def __init__(self, tests, lit_config, progress_callback, timeout, workers):
-        super(ParallelRun, self).__init__(tests, lit_config, progress_callback, timeout)
-        self.workers = workers
-
     def _execute(self, deadline):
         semaphores = {
             k: NopSemaphore() if v is None else
