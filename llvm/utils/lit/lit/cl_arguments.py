@@ -162,7 +162,14 @@ def parse_args():
     args = sys.argv[1:] + env_args
     opts = parser.parse_args(args)
 
-    # Validate command line options
+    # Always set these so we don't have to check for None
+    if not opts.timeout:
+        opts.timeout = float('inf')
+    if not opts.max_failures:
+        opts.max_failures = float('inf')
+
+    #TODO(yln): maxIndividualTestTime
+
     if opts.echoAllCommands:
         opts.showOutput = True
 

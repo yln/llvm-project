@@ -13,8 +13,8 @@ class NopSemaphore(object):
     def release(self): pass
 
 
-def create_run(tests, lit_config, workers, progress_callback, max_failures=None,
-               timeout=None):
+def create_run(tests, lit_config, workers, progress_callback, max_failures,
+               timeout):
     assert workers > 0
     if workers == 1:
         run = SerialRun()
@@ -54,11 +54,13 @@ class Run(object):
         self.failure_count = 0
         self.hit_max_failures = False
 
+        # TODO(yln): this code below never runs because timeout is always set in cl_arguments.py
+        # move this code there instead of positive infinity
         # Larger timeouts (one year, positive infinity) don't work on Windows.
         one_week = 7 * 24 * 60 * 60  # days * hours * minutes * seconds
         timeout = self.timeout or one_week
-        deadline = time.time() + timeout
 
+        deadline = time.time() + timeout
         self._execute(deadline)
 
         # Mark any tests that weren't run as UNRESOLVED.
@@ -84,7 +86,7 @@ class Run(object):
         # If we've finished all the tests or too many tests have failed, notify
         # the main thread that we've stopped testing.
         self.failure_count += (result.code == lit.Test.FAIL)  # TODO(yln): this is buggy
-        if self.max_failures and self.failure_count == self.max_failures:
+        if self.failure_count == self.max_failures:
             self.hit_max_failures = True
 
 

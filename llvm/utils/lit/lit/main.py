@@ -79,8 +79,7 @@ def main(builtin_params={}):
         (run, shards) = opts.shard
         filtered_tests = filter_by_shard(filtered_tests, run, shards, lit_config)
 
-    if opts.max_tests:
-        filtered_tests = filtered_tests[:opts.max_tests]
+    filtered_tests = filtered_tests[:opts.max_tests]
 
     opts.workers = min(len(filtered_tests), opts.workers)
 
@@ -90,7 +89,7 @@ def main(builtin_params={}):
 
     executed_tests = [t for t in filtered_tests if t.result]
 
-    print_summary(executed_tests, elapsed, opts)
+    print_summary(filtered_tests, elapsed, opts)
 
     if opts.output_path:
         #TODO(yln): pass in discovered_tests
