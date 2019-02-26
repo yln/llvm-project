@@ -77,17 +77,15 @@ class Run(object):
         if self.hit_max_failures:
             return
 
-        # Update the parent process copy of the test. This includes the result,
-        # XFAILS, REQUIRES, and UNSUPPORTED statuses.
         test.setResult(result)
 
-        self.progress_callback(test)
+        # Use test.isFailure() for correct XFAIL and XPASS handling
+        if test.isFailure():
+            self.failure_count += 1
+            if self.failure_count == self.max_failures:
+                self.hit_max_failures = True
 
-        # If we've finished all the tests or too many tests have failed, notify
-        # the main thread that we've stopped testing.
-        self.failure_count += (result.code == lit.Test.FAIL)  # TODO(yln): this is buggy
-        if self.failure_count == self.max_failures:
-            self.hit_max_failures = True
+        self.progress_callback(test)
 
 
 class SerialRun(Run):
