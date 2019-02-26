@@ -5,17 +5,21 @@ import lit.Test
 import lit.util
 import lit.worker
 
+
 # No-operation semaphore for supporting `None` for parallelism_groups.
 #   lit_config.parallelism_groups['my_group'] = None
 class NopSemaphore(object):
     def acquire(self): pass
     def release(self): pass
 
-def create_run(tests, lit_config, workers, progress_callback, timeout=None):
-    # TODO(yln) assert workers > 0
+
+def create_run(tests, lit_config, workers, progress_callback, max_failures=None,
+               timeout=None):
+    assert workers > 0
     if workers == 1:
         return SerialRun(tests, lit_config, progress_callback, timeout)
     return ParallelRun(tests, lit_config, progress_callback, timeout, workers)
+
 
 class Run(object):
     """A concrete, configured testing run."""
@@ -81,6 +85,7 @@ class Run(object):
                 self.failure_count == self.lit_config.maxFailures:
             self.hit_max_failures = True
 
+
 class SerialRun(Run):
     def __init__(self, tests, lit_config, progress_callback, timeout):
         super(SerialRun, self).__init__(tests, lit_config, progress_callback, timeout)
@@ -92,6 +97,7 @@ class SerialRun(Run):
             self._process_result(test, result)
             if self.hit_max_failures:
                 break
+
 
 class ParallelRun(Run):
     def __init__(self, tests, lit_config, progress_callback, timeout, workers):
