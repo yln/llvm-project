@@ -68,15 +68,13 @@
 #
 # RUN: %{lit} --num-shards 100 --run-shard 6 %{inputs}/discovery >%t.out 2>%t.err
 # RUN: FileCheck --check-prefix=CHECK-SHARD-BIG-ERR2 < %t.err %s
-# RUN: FileCheck --check-prefix=CHECK-SHARD-BIG-OUT2 < %t.out %s
 # CHECK-SHARD-BIG-ERR2: note: Selecting shard 6/100 = size 0/5 = tests #(100*k)+6 = []
-# CHECK-SHARD-BIG-OUT2: Testing: 0 of 5 tests
+# CHECK-SHARD-BIG-ERR2: warning: no tests in this shard
 #
 # RUN: %{lit} --num-shards 100 --run-shard 50 %{inputs}/discovery >%t.out 2>%t.err
 # RUN: FileCheck --check-prefix=CHECK-SHARD-BIG-ERR3 < %t.err %s
-# RUN: FileCheck --check-prefix=CHECK-SHARD-BIG-OUT3 < %t.out %s
 # CHECK-SHARD-BIG-ERR3: note: Selecting shard 50/100 = size 0/5 = tests #(100*k)+50 = []
-# CHECK-SHARD-BIG-OUT3: Testing: 0 of 5 tests
+# CHECK-SHARD-BIG-ERR3: warning: no tests in this shard
 
 
 # Check that range constraints are enforced

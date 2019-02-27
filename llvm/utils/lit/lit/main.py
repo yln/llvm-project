@@ -78,6 +78,9 @@ def main(builtin_params={}):
     if opts.shard:
         (run, shards) = opts.shard
         filtered_tests = filter_by_shard(filtered_tests, run, shards, lit_config)
+        if not filtered_tests:
+            sys.stderr.write('warning: no tests in this shard\n')
+            return
 
     filtered_tests = filtered_tests[:opts.max_tests]
 
