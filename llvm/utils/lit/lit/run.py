@@ -30,6 +30,12 @@ def create_run(tests, lit_config, workers, progress_callback, max_failures,
     return run
 
 
+class MaxFailuresError(Exception):
+    pass
+class TimeoutError(Exception):
+    pass
+
+
 class Run(object):
     """A concrete, configured testing run."""
 
@@ -63,6 +69,7 @@ class Run(object):
         deadline = time.time() + timeout
         self._execute(deadline)
 
+        # TODO(yln): delete this and make print_summary better
         # Mark any tests that weren't run as UNRESOLVED.
         for test in self.tests:
             if test.result is None:
@@ -74,6 +81,8 @@ class Run(object):
         # Don't add any more test results after we've hit the maximum failure
         # count.  Otherwise we're racing with the main thread, which is going
         # to terminate the process pool soon.
+        # TODO(yln): hit_max_failures can be removed
+        # TODO(yln): raise MaxFailuresError here
         if self.hit_max_failures:
             return
 
@@ -90,12 +99,13 @@ class Run(object):
 
 class SerialRun(Run):
     def _execute(self, deadline):
-        # TODO(yln): ignores deadline
         for test in self.tests:
             result = lit.worker._execute(test, self.lit_config)
             self._process_result(test, result)
             if self.hit_max_failures:
-                break
+                raise MaxFailuresError()
+            if time.time() > deadline:
+                raise TimeoutError()
 
 
 class ParallelRun(Run):
@@ -123,18 +133,24 @@ class ParallelRun(Run):
             for test in self.tests]
         pool.close()
 
+        try:
+            self._process_results(async_results, deadline)
+        except:
+            pool.terminate()
+            raise
+        finally:
+            pool.join()
+
+    def _process_results(self, async_results, deadline):
         for ar in async_results:
             timeout = deadline - time.time()
             try:
                 ar.get(timeout)
+                # TODO(yln): process result here, instead of callback
             except multiprocessing.TimeoutError:
-                # TODO(yln): print timeout error
-                pool.terminate()
-                break
+                raise TimeoutError()
             if self.hit_max_failures:
-                pool.terminate()
-                break
-        pool.join()
+                raise MaxFailuresError()
 
     # TODO(yln): interferes with progress bar
     # Some tests use threads internally, and at least on Linux each of these
