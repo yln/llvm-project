@@ -92,7 +92,7 @@ def main(builtin_params={}):
 
     executed_tests = [t for t in filtered_tests if t.result]
 
-    print_summary(filtered_tests, elapsed, opts)
+    print_summary(executed_tests, elapsed, opts)
 
     if opts.output_path:
         #TODO(yln): pass in discovered_tests
@@ -248,55 +248,61 @@ def execute_in_tmp_dir(run, lit_config):
                 # FIXME: Re-try after timeout on Windows.
                 lit_config.warning("Failed to delete temp directory '%s'" % tmp_dir)
 
+
 def print_summary(tests, elapsed, opts):
     if not opts.quiet:
         print('\nTesting Time: %.2fs' % elapsed)
 
-    byCode = {}
-    for test in tests:
-        if test.result.code not in byCode:
-            byCode[test.result.code] = []
-        byCode[test.result.code].append(test)
+    groups = [
+        # Successes
+        (lit.Test.PASS,        'Passing'),
+        (lit.Test.FLAKYPASS,   'Passing With Retry'),
+        (lit.Test.UNSUPPORTED, 'Unsupported'),
+        (lit.Test.XFAIL,       'Expected Failing'),
+        # Failures
+        (lit.Test.UNRESOLVED,  'Unresolved'),
+        (lit.Test.TIMEOUT,     'Timed Out'),
+        (lit.Test.FAIL,        'Failing'),
+        (lit.Test.XPASS,       'Unexpected Passing')]
 
-    # Print each test in any of the failing groups.
-    for title,code in (('Unexpected Passing Tests', lit.Test.XPASS),
-                       ('Failing Tests', lit.Test.FAIL),
-                       ('Unresolved Tests', lit.Test.UNRESOLVED),
-                       ('Unsupported Tests', lit.Test.UNSUPPORTED),
-                       ('Expected Failing Tests', lit.Test.XFAIL),
-                       ('Timed Out Tests', lit.Test.TIMEOUT)):
-        if (lit.Test.XFAIL == code and not opts.show_xfail) or \
-           (lit.Test.UNSUPPORTED == code and not opts.show_unsupported) or \
-           (lit.Test.UNRESOLVED == code and (opts.max_failures is not None)):
-            continue
-        elts = byCode.get(code)
-        if not elts:
-            continue
-        print('*'*20)
-        print('%s (%d):' % (title, len(elts)))
-        for test in elts:
-            print('    %s' % test.getFullName())
-        sys.stdout.write('\n')
+    by_code = {code: [] for (code, _) in groups}
+    for test in tests:
+        by_code[test.result.code].append(test)
+
+    for (code, label) in groups:
+        print_group(code, label, by_code[code], opts)
 
     if opts.timeTests and tests:
-        # Order by time.
-        test_times = [(test.getFullName(), test.result.elapsed)
-                      for test in tests]
+        test_times = [(t.getFullName(), t.result.elapsed) for t in tests]
         lit.util.printHistogram(test_times, title='Tests')
 
-    for name,code in (('Expected Passes    ', lit.Test.PASS),
-                      ('Passes With Retry  ', lit.Test.FLAKYPASS),
-                      ('Expected Failures  ', lit.Test.XFAIL),
-                      ('Unsupported Tests  ', lit.Test.UNSUPPORTED),
-                      ('Unresolved Tests   ', lit.Test.UNRESOLVED),
-                      ('Unexpected Passes  ', lit.Test.XPASS),
-                      ('Unexpected Failures', lit.Test.FAIL),
-                      ('Individual Timeouts', lit.Test.TIMEOUT)):
-        if opts.quiet and not code.isFailure:
-            continue
-        N = len(byCode.get(code,[]))
-        if N:
-            print('  %s: %d' % (name,N))
+    for (code, label) in groups:
+        print_group_summary(code, label, by_code[code], opts)
+
+
+def print_group(code, label, tests, opts):
+    # TODO(yln): more consistent showing/not showing
+    if code == lit.Test.PASS:
+        return
+    if (lit.Test.XFAIL == code and not opts.show_xfail) or \
+       (lit.Test.UNSUPPORTED == code and not opts.show_unsupported) or \
+       (lit.Test.UNRESOLVED == code and (opts.max_failures is not None)):
+        return
+    if not tests:
+        return
+    print('*' * 20)
+    print('%s Tests (%d):' % (label, len(tests)))
+    for test in tests:
+        print('  %s' % test.getFullName())
+    sys.stdout.write('\n')
+
+
+def print_group_summary(code, label, tests, opts):
+    if not opts.quiet or code.isFailure:
+        count = len(tests)
+        if len(tests):
+            print('    %s: %d' % (label.ljust(18), count))
+
 
 def write_test_results(tests, lit_config, elapsed, output_path):
     # TODO(yln): audit: unexecuted tests
