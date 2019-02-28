@@ -92,7 +92,7 @@ def main(builtin_params={}):
 
     executed_tests = [t for t in filtered_tests if t.result]
 
-    print_summary(executed_tests, elapsed, opts)
+    print_results(executed_tests, elapsed, opts)
 
     if opts.output_path:
         #TODO(yln): pass in discovered_tests
@@ -249,11 +249,7 @@ def execute_in_tmp_dir(run, lit_config):
                 lit_config.warning("Failed to delete temp directory '%s'" % tmp_dir)
 
 
-def print_summary(tests, elapsed, opts):
-    if not opts.quiet:
-        print('\nTesting Time: %.2fs' % elapsed)
-
-    groups = [
+result_groups = [
         # Successes
         (lit.Test.PASS,        'Passing'),
         (lit.Test.FLAKYPASS,   'Passing With Retry'),
@@ -265,19 +261,23 @@ def print_summary(tests, elapsed, opts):
         (lit.Test.FAIL,        'Failing'),
         (lit.Test.XPASS,       'Unexpected Passing')]
 
-    by_code = {code: [] for (code, _) in groups}
+
+def print_results(tests, elapsed, opts):
+    if not opts.quiet:
+        print('\nTesting Time: %.2fs' % elapsed)
+
+    by_code = {code: [] for (code, _) in result_groups}
     for test in tests:
         by_code[test.result.code].append(test)
 
-    for (code, label) in groups:
+    for (code, label) in result_groups:
         print_group(code, label, by_code[code], opts)
 
     if opts.timeTests and tests:
         test_times = [(t.getFullName(), t.result.elapsed) for t in tests]
         lit.util.printHistogram(test_times, title='Tests')
 
-    for (code, label) in groups:
-        print_group_summary(code, label, by_code[code], opts)
+    print_summary(by_code, opts)
 
 
 def print_group(code, label, tests, opts):
@@ -297,11 +297,19 @@ def print_group(code, label, tests, opts):
     sys.stdout.write('\n')
 
 
-def print_group_summary(code, label, tests, opts):
-    if not opts.quiet or code.isFailure:
-        count = len(tests)
-        if len(tests):
-            print('    %s: %d' % (label.ljust(18), count))
+def print_summary(by_code, opts):
+    groups = result_groups
+    if opts.quiet:
+        groups = (x for x in groups if x[0].isFailure)
+
+    groups = ((label, len(by_code[code])) for (code, label) in groups)
+    groups = [x for x in groups if x[1]]
+
+    max_label_len = max((len(x[0]) for x in groups))
+
+    for (label, count) in groups:
+        label = label.ljust(max_label_len)
+        print('    %s: %d' % (label, count))
 
 
 def write_test_results(tests, lit_config, elapsed, output_path):
