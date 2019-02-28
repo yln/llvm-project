@@ -306,10 +306,12 @@ def print_summary(by_code, opts):
     groups = [x for x in groups if x[1]]
 
     max_label_len = max((len(x[0]) for x in groups))
+    max_count_len = max((len(str(x[1])) for x in groups))
 
     for (label, count) in groups:
         label = label.ljust(max_label_len)
-        print('    %s: %d' % (label, count))
+        count = str(count).rjust(max_count_len)
+        print('    %s: %s' % (label, count))
 
 
 def write_test_results(tests, lit_config, elapsed, output_path):
