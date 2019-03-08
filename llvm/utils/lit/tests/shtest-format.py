@@ -80,9 +80,9 @@
 # CHECK: Unexpected Passing Tests (1)
 # CHECK: shtest-format :: xpass.txt
 
+# CHECK: Unsupported       : 5
 # CHECK: Passing           : 8
 # CHECK: Expected Failing  : 4
-# CHECK: Unsupported       : 5
 # CHECK: Unresolved        : 3
 # CHECK: Failing           : 3
 # CHECK: Unexpected Passing: 1

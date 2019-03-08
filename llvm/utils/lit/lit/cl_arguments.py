@@ -170,6 +170,7 @@ def parse_args():
 
     #TODO(yln): maxIndividualTestTime
     #TODO(yln): sharding and --max-tests should be mutually exclusive
+    #TODO(yln): sharding requires --order=default
 
     if opts.echoAllCommands:
         opts.showOutput = True

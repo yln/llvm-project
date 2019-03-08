@@ -90,12 +90,17 @@ def main(builtin_params={}):
     run_tests(filtered_tests, lit_config, opts, len(discovered_tests))
     elapsed = time.time() - start
 
-    print_results(filtered_tests, elapsed, opts)
+    for test in discovered_tests:
+        if not test.result:
+            test.setResult(lit.Test.Result(lit.Test.FILTERED))
+
+    print_results(discovered_tests, elapsed, opts)
 
     if opts.output_path:
         #TODO(yln): pass in discovered_tests
         write_test_results(filtered_tests, lit_config, elapsed, opts.output_path)
     if opts.xunit_output_file:
+        # TODO(yln): pass in discovered_tests
         write_test_results_xunit(filtered_tests, opts)
 
     if lit_config.numErrors:
@@ -249,12 +254,12 @@ def execute_in_tmp_dir(run, lit_config):
 
 result_groups = [
         # Successes
-        (lit.Test.PASS,        'Passing'),
-        (lit.Test.FLAKYPASS,   'Passing With Retry'),
-        (lit.Test.XFAIL,       'Expected Failing'),
         (lit.Test.FILTERED,    'Filtered'),
         (lit.Test.SKIPPED,     'Skipped'),
         (lit.Test.UNSUPPORTED, 'Unsupported'),
+        (lit.Test.PASS,        'Passing'),
+        (lit.Test.FLAKYPASS,   'Passing With Retry'),
+        (lit.Test.XFAIL,       'Expected Failing'),
         # Failures
         (lit.Test.UNRESOLVED,  'Unresolved'),
         (lit.Test.TIMEOUT,     'Timed Out'),
@@ -282,7 +287,9 @@ def print_results(tests, elapsed, opts):
 
 def print_group(code, label, tests, opts):
     # TODO(yln): more consistent showing/not showing
-    if code == lit.Test.PASS or code == lit.Test.SKIPPED:
+    if code == lit.Test.PASS or \
+       code == lit.Test.SKIPPED or \
+       code == lit.Test.FILTERED:
         return
     if (lit.Test.XFAIL == code and not opts.show_xfail) or \
        (lit.Test.UNSUPPORTED == code and not opts.show_unsupported) or \
