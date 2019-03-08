@@ -72,20 +72,20 @@
 # CHECK-NEXT: --
 # CHECK: Testing Time
 
-# CHECK: Unexpected Passing Tests (1)
-# CHECK: shtest-format :: xpass.txt
-
 # CHECK: Failing Tests (3)
 # CHECK: shtest-format :: external_shell/fail.txt
 # CHECK: shtest-format :: external_shell/fail_with_bad_encoding.txt
 # CHECK: shtest-format :: fail.txt
 
-# CHECK: Expected Passes    : 8
-# CHECK: Expected Failures  : 4
-# CHECK: Unsupported Tests  : 5
-# CHECK: Unresolved Tests   : 3
-# CHECK: Unexpected Passes  : 1
-# CHECK: Unexpected Failures: 3
+# CHECK: Unexpected Passing Tests (1)
+# CHECK: shtest-format :: xpass.txt
+
+# CHECK: Passing           : 8
+# CHECK: Expected Failing  : 4
+# CHECK: Unsupported       : 5
+# CHECK: Unresolved        : 3
+# CHECK: Failing           : 3
+# CHECK: Unexpected Passing: 1
 
 
 # XUNIT: <?xml version="1.0" encoding="UTF-8" ?>

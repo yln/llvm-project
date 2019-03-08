@@ -18,6 +18,6 @@
 # CHECK: PASS: googletest-format :: {{[Dd]ummy[Ss]ub[Dd]ir}}/OneTest.py/ParameterizedTest/0.subTest
 # CHECK: PASS: googletest-format :: {{[Dd]ummy[Ss]ub[Dd]ir}}/OneTest.py/ParameterizedTest/1.subTest
 # CHECK: Failing Tests (1)
-# CHECK: Expected Passes    : 3
-# CHECK: Unexpected Failures: 1
+# CHECK: Passing: 3
+# CHECK: Failing: 1
 
