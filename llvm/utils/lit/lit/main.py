@@ -90,15 +90,13 @@ def main(builtin_params={}):
     run_tests(filtered_tests, lit_config, opts, len(discovered_tests))
     elapsed = time.time() - start
 
-    executed_tests = [t for t in filtered_tests if t.result]
-
-    print_results(executed_tests, elapsed, opts)
+    print_results(filtered_tests, elapsed, opts)
 
     if opts.output_path:
         #TODO(yln): pass in discovered_tests
-        write_test_results(executed_tests, lit_config, elapsed, opts.output_path)
+        write_test_results(filtered_tests, lit_config, elapsed, opts.output_path)
     if opts.xunit_output_file:
-        write_test_results_xunit(executed_tests, opts)
+        write_test_results_xunit(filtered_tests, opts)
 
     if lit_config.numErrors:
         sys.stderr.write('\n%d error(s) in tests\n' % lit_config.numErrors)
@@ -107,7 +105,7 @@ def main(builtin_params={}):
     if lit_config.numWarnings:
         sys.stderr.write('\n%d warning(s) in tests\n' % lit_config.numWarnings)
 
-    has_failure = any(t.isFailure() for t in executed_tests)
+    has_failure = any(t.isFailure() for t in (filtered_tests))
     if has_failure:
         sys.exit(1)
 
@@ -253,8 +251,10 @@ result_groups = [
         # Successes
         (lit.Test.PASS,        'Passing'),
         (lit.Test.FLAKYPASS,   'Passing With Retry'),
-        (lit.Test.UNSUPPORTED, 'Unsupported'),
         (lit.Test.XFAIL,       'Expected Failing'),
+        (lit.Test.FILTERED,    'Filtered'),
+        (lit.Test.SKIPPED,     'Skipped'),
+        (lit.Test.UNSUPPORTED, 'Unsupported'),
         # Failures
         (lit.Test.UNRESOLVED,  'Unresolved'),
         (lit.Test.TIMEOUT,     'Timed Out'),
@@ -282,7 +282,7 @@ def print_results(tests, elapsed, opts):
 
 def print_group(code, label, tests, opts):
     # TODO(yln): more consistent showing/not showing
-    if code == lit.Test.PASS:
+    if code == lit.Test.PASS or code == lit.Test.SKIPPED:
         return
     if (lit.Test.XFAIL == code and not opts.show_xfail) or \
        (lit.Test.UNSUPPORTED == code and not opts.show_unsupported) or \

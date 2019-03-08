@@ -169,6 +169,7 @@ def parse_args():
         opts.max_failures = float('inf')
 
     #TODO(yln): maxIndividualTestTime
+    #TODO(yln): sharding and --max-tests should be mutually exclusive
 
     if opts.echoAllCommands:
         opts.showOutput = True
