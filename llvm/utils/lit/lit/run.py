@@ -145,7 +145,6 @@ class ParallelRun(Run):
             if self.hit_max_failures:
                 raise MaxFailuresError()
 
-    # TODO(yln): interferes with progress bar
     # Some tests use threads internally, and at least on Linux each of these
     # threads counts toward the current process limit. Try to raise the (soft)
     # process limit so that tests don't fail due to resource exhaustion.

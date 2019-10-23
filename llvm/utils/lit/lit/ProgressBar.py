@@ -201,7 +201,7 @@ class SimpleProgressBar:
         sys.stdout.flush()
         self.atIndex = next
 
-    def clear(self, interrupted=False):
+    def clear(self, interrupted):
         if self.atIndex is not None and not interrupted:
             sys.stdout.write('\n')
             sys.stdout.flush()
@@ -278,7 +278,7 @@ class ProgressBar:
         if not self.term.XN:
             sys.stdout.flush()
 
-    def clear(self, interrupted=False):
+    def clear(self, interrupted):
         if not self.cleared:
             sys.stdout.write(self.BOL + self.term.CLEAR_EOL +
                              self.term.UP + self.term.CLEAR_EOL +
