@@ -18,9 +18,6 @@ def create_display(opts, tests, total_tests, workers):
         except ValueError:
             progress_bar = lit.ProgressBar.SimpleProgressBar('Testing: ')
 
-    if progress_bar:
-        progress_bar.update(0, '')
-
     return Display(opts, tests, header, progress_bar)
 
 
