@@ -60,13 +60,7 @@ class Run(object):
         self.failure_count = 0
         self.hit_max_failures = False
 
-        # TODO(yln): this code below never runs because timeout is always set in cl_arguments.py
-        # move this code there instead of positive infinity
-        # Larger timeouts (one year, positive infinity) don't work on Windows.
-        one_week = 7 * 24 * 60 * 60  # days * hours * minutes * seconds
-        timeout = self.timeout or one_week
-
-        deadline = time.time() + timeout
+        deadline = time.time() + self.timeout
         try:
             self._execute(deadline)
         finally:

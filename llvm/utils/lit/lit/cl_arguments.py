@@ -164,7 +164,8 @@ def parse_args():
 
     # Always set these so we don't have to check for None
     if not opts.timeout:
-        opts.timeout = float('inf')
+        # Larger timeouts (one year, positive infinity) don't work on Windows.
+        opts.timeout = 7 * 24 * 60 * 60  # days * hours * minutes * seconds
     if not opts.max_failures:
         opts.max_failures = float('inf')
 

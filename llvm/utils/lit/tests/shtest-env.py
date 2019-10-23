@@ -38,6 +38,6 @@
 # CHECK: $ "env" "A_FOO=999" "-u" "FOO" "{{[^"]*}}" "print_environment.py"
 # CHECK: $ "env" "A_FOO=1" "-u" "FOO" "B_BAR=2" "-u" "BAR" "C_OOF=3" "{{[^"]*}}" "print_environment.py"
 
-# CHECK: Expected Passes : 3
-# CHECK: Unexpected Failures: 4
+# CHECK: Passing: 3
+# CHECK: Failing: 4
 # CHECK-NOT: {{.}}
