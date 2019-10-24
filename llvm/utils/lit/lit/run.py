@@ -50,8 +50,7 @@ class Run(object):
         computed. Tests which were not actually executed (for any reason) will
         be marked SKIPPED.
         """
-        self.failure_count = 0
-        self.hit_max_failures = False
+        self.failures = 0
 
         deadline = time.time() + self.timeout
         try:
@@ -60,33 +59,6 @@ class Run(object):
             for test in self.tests:
                 if not test.result:
                     test.setResult(lit.Test.Result(lit.Test.SKIPPED))
-
-    # TODO(yln): as the comment says.. this is racing with the main thread waiting
-    # for results
-    def _process_result(self, pickled_test, test):
-        # Don't add any more test results after we've hit the maximum failure
-        # count.  Otherwise we're racing with the main thread, which is going
-        # to terminate the process pool soon.
-        # TODO(yln): hit_max_failures can be removed
-        # TODO(yln): raise MaxFailuresError here
-        if self.hit_max_failures:
-            return
-
-        # Do not use Test.setResult here; XFAIL and XPASS have been accounted
-        # for.  We also want to copy xfails, requires, unsupported to ensure
-        # the getters (e.g., Test.getMissingRequiredFeatures) work correctly.
-        test.result = pickled_test.result
-        test.xfails = pickled_test.xfails
-        test.requires = pickled_test.requires
-        test.unsupported = pickled_test.unsupported
-
-        # Use test.isFailure() for correct XFAIL and XPASS handling
-        if test.isFailure():
-            self.failure_count += 1
-            if self.failure_count == self.max_failures:
-                self.hit_max_failures = True
-
-        self.progress_callback(test)
 
     def _execute(self, deadline):
         semaphores = {
@@ -107,29 +79,52 @@ class Run(object):
         self._install_win32_signal_handler(pool)
 
         async_results = [
-            pool.apply_async(lit.worker.execute, args=[test],
-                             callback=lambda pt, t=test: self._process_result(pt, t))
+            pool.apply_async(lit.worker.execute, args=[test], callback=
+                             lambda pt, t=test: self._process_result(t, pt))
             for test in self.tests]
         pool.close()
 
         try:
-            self._process_results(async_results, deadline)
+            self._wait_for(async_results, deadline)
         except:
             pool.terminate()
             raise
         finally:
             pool.join()
 
-    def _process_results(self, async_results, deadline):
+    def _process_result(self, test, pickled_test):
+        # Don't add any more test results after we've hit the maximum failure
+        # count.  Otherwise we're racing with the main thread, which is going
+        # to terminate the process pool soon.
+        if self.failures >= self.max_failures:
+            return
+
+        self._apply_result(test, pickled_test)
+
+        # Use test.isFailure() for correct XFAIL and XPASS handling
+        if test.isFailure():
+            self.failures += 1
+
+        self.progress_callback(test)
+
+    def _apply_result(self, test, pickled_test):
+        # Do not use Test.setResult here; XFAIL and XPASS have been accounted
+        # for.  We also want to copy xfails, requires, unsupported to ensure
+        # the getters (e.g., Test.getMissingRequiredFeatures) work correctly.
+        test.result = pickled_test.result
+        test.xfails = pickled_test.xfails
+        test.requires = pickled_test.requires
+        test.unsupported = pickled_test.unsupported
+
+    def _wait_for(self, async_results, deadline):
         for ar in async_results:
+            if self.failures >= self.max_failures:
+                raise MaxFailuresError()
             timeout = deadline - time.time()
             try:
                 ar.get(timeout)
-                # TODO(yln): process result here, instead of callback
             except multiprocessing.TimeoutError:
                 raise TimeoutError()
-            if self.hit_max_failures:
-                raise MaxFailuresError()
 
     # Some tests use threads internally, and at least on Linux each of these
     # threads counts toward the current process limit. Try to raise the (soft)
