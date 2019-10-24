@@ -6,13 +6,6 @@ import lit.util
 import lit.worker
 
 
-# No-operation semaphore for supporting `None` for parallelism_groups.
-#   lit_config.parallelism_groups['my_group'] = None
-class NopSemaphore(object):
-    def acquire(self): pass
-    def release(self): pass
-
-
 class MaxFailuresError(Exception):
     pass
 class TimeoutError(Exception):
@@ -61,12 +54,13 @@ class Run(object):
                     test.setResult(lit.Test.Result(lit.Test.SKIPPED))
 
     def _execute(self, deadline):
-        semaphores = {
-            k: NopSemaphore() if v is None else
-            multiprocessing.BoundedSemaphore(v) for k, v in
-            self.lit_config.parallelism_groups.items()}
-
         self._increase_process_limit()
+
+        # 'not None' to support the the following:
+        #   lit_config.parallelism_groups['my_group'] = None
+        semaphores = {
+            k: multiprocessing.BoundedSemaphore(v) for k, v in
+            self.lit_config.parallelism_groups.items() if v is not None}
 
         pool = multiprocessing.Pool(self.workers, lit.worker.initialize,
                                     (self.lit_config, semaphores))

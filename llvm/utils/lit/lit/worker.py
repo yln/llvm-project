@@ -39,26 +39,19 @@ def execute(test):
     Arguments and results of this function are pickled, so they should be cheap
     to copy.
     """
-    result = _execute_in_parallelism_group(test, _lit_config,
-                                           _parallelism_semaphores)
-    test.setResult(result)
-    return test
-
-
-def _execute_in_parallelism_group(test, lit_config, parallelism_semaphores):
     pg = test.config.parallelism_group
     if callable(pg):
         pg = pg(test)
 
-    if pg:
-        semaphore = parallelism_semaphores[pg]
-        try:
-            semaphore.acquire()
-            return _execute(test, lit_config)
-        finally:
-            semaphore.release()
+    sem = _parallelism_semaphores.get(pg)
+    if sem:
+        with sem:
+            result = _execute(test, _lit_config)
     else:
-        return _execute(test, lit_config)
+        result = _execute(test, _lit_config)
+
+    test.setResult(result)
+    return test
 
 
 def _execute(test, lit_config):
