@@ -14,23 +14,6 @@ class NopSemaphore(object):
     def release(self): pass
 
 
-def create_run(tests, lit_config, workers, progress_callback, max_failures,
-               timeout):
-    assert workers > 0
-    if workers == 1:
-        run = SerialRun()
-    else:
-        run = ParallelRun()
-        run.workers = workers
-
-    run.tests = tests
-    run.lit_config = lit_config
-    run.progress_callback = progress_callback
-    run.max_failures = max_failures
-    run.timeout = timeout
-    return run
-
-
 class MaxFailuresError(Exception):
     pass
 class TimeoutError(Exception):
@@ -39,6 +22,16 @@ class TimeoutError(Exception):
 
 class Run(object):
     """A concrete, configured testing run."""
+
+    def __init__(self, tests, lit_config, workers, progress_callback,
+                 max_failures, timeout):
+        self.tests = tests
+        self.lit_config = lit_config
+        self.workers = workers
+        self.progress_callback = progress_callback
+        self.max_failures = max_failures
+        self.timeout = timeout
+        assert workers > 0
 
     def execute(self):
         """
@@ -93,21 +86,6 @@ class Run(object):
 
         self.progress_callback(test)
 
-
-class SerialRun(Run):
-    def _execute(self, deadline):
-        for test in self.tests:
-            result = lit.worker._execute(test, self.lit_config)
-            pt = copy.copy(test)
-            pt.setResult(result)
-            self._process_result(pt, test)
-            if self.hit_max_failures:
-                raise MaxFailuresError()
-            if time.time() > deadline:
-                raise TimeoutError()
-
-
-class ParallelRun(Run):
     def _execute(self, deadline):
         semaphores = {
             k: NopSemaphore() if v is None else
