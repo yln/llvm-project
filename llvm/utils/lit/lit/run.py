@@ -1,4 +1,3 @@
-import copy
 import multiprocessing
 import time
 
@@ -73,7 +72,10 @@ class Run(object):
         if self.hit_max_failures:
             return
 
-        test.setResult(pickled_test.result)
+        # Do not use Test.setResult here; XFAIL and XPASS have been accounted
+        # for.  We also want to copy xfails, requires, unsupported to ensure
+        # the getters (e.g., Test.getMissingRequiredFeatures) work correctly.
+        test.result = pickled_test.result
         test.xfails = pickled_test.xfails
         test.requires = pickled_test.requires
         test.unsupported = pickled_test.unsupported

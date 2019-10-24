@@ -231,6 +231,20 @@ class Test:
         if not isinstance(result, Result):
             raise ValueError("unexpected result type")
 
+        try:
+            expected_to_fail = self.isExpectedToFail()
+        except ValueError as err:
+            # Syntax error in an XFAIL line.
+            result.code = UNRESOLVED
+            result.output = str(err)
+        else:
+            if expected_to_fail:
+                # pass -> unexpected pass
+                if result.code is PASS:
+                    result.code = XPASS
+                # fail -> expected fail
+                elif result.code is FAIL:
+                    result.code = XFAIL
         self.result = result
 
     def isFailure(self):
