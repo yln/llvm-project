@@ -31,8 +31,10 @@ def execute(test):
     to copy.
     """
     try:
-        return _execute_in_parallelism_group(test, _lit_config,
-                                             _parallelism_semaphores)
+        result = _execute_in_parallelism_group(test, _lit_config,
+                                               _parallelism_semaphores)
+        test.setResult(result)
+        return test
     except KeyboardInterrupt:
         # If a worker process gets an interrupt, abort it immediately.
         lit.util.abort_now()
@@ -88,7 +90,7 @@ def resolve_result_code(result, test):
 
 def _execute_test_handle_errors(test, lit_config):
     try:
-        return _adapt_result(test.config.test_format.execute(test, lit_config))
+        result = test.config.test_format.execute(test, lit_config)
     except KeyboardInterrupt:
         raise
     except:
@@ -98,6 +100,8 @@ def _execute_test_handle_errors(test, lit_config):
         output += traceback.format_exc()
         output += '\n'
         return lit.Test.Result(lit.Test.UNRESOLVED, output)
+
+    return _adapt_result(result)
 
 
 # Support deprecated result from execute() which returned the result

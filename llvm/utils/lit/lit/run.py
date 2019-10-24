@@ -1,3 +1,4 @@
+import copy
 import multiprocessing
 import time
 
@@ -70,7 +71,7 @@ class Run(object):
 
     # TODO(yln): as the comment says.. this is racing with the main thread waiting
     # for results
-    def _process_result(self, test, result):
+    def _process_result(self, pickled_test, test):
         # Don't add any more test results after we've hit the maximum failure
         # count.  Otherwise we're racing with the main thread, which is going
         # to terminate the process pool soon.
@@ -79,7 +80,10 @@ class Run(object):
         if self.hit_max_failures:
             return
 
-        test.setResult(result)
+        test.setResult(pickled_test.result)
+        test.xfails = pickled_test.xfails
+        test.requires = pickled_test.requires
+        test.unsupported = pickled_test.unsupported
 
         # Use test.isFailure() for correct XFAIL and XPASS handling
         if test.isFailure():
@@ -94,7 +98,9 @@ class SerialRun(Run):
     def _execute(self, deadline):
         for test in self.tests:
             result = lit.worker._execute(test, self.lit_config)
-            self._process_result(test, result)
+            pt = copy.copy(test)
+            pt.setResult(result)
+            self._process_result(pt, test)
             if self.hit_max_failures:
                 raise MaxFailuresError()
             if time.time() > deadline:
@@ -122,7 +128,7 @@ class ParallelRun(Run):
 
         async_results = [
             pool.apply_async(lit.worker.execute, args=[test],
-                callback=lambda r, t=test: self._process_result(t, r))
+                             callback=lambda pt, t=test: self._process_result(pt, t))
             for test in self.tests]
         pool.close()
 
