@@ -18,7 +18,7 @@ import lit.Test
 import lit.util
 
 
-def main(builtin_params={}):
+def main(builtin_params):
     opts = lit.cl_arguments.parse_args()
 
     if opts.show_version:
