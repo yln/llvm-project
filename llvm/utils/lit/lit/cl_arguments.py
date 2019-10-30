@@ -5,18 +5,18 @@ import sys
 
 import lit.util
 
+
 # TODO(yln): scan dest, to see if is redundant
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='lit')
     parser.add_argument('test_paths',
             nargs='+',
             metavar="TEST_PATH",
             help='File or path to include in the test suite')
 
-    parser.add_argument("--version",
-            dest="show_version",
-            help="Show version and exit",
-            action="store_true")
+    parser.add_argument('--version',
+            action='version',
+            version='%(prog)s ' + lit.__version__)
     parser.add_argument("-j", "--threads", "--workers",
             dest="workers",
             metavar="N",
@@ -195,11 +195,14 @@ def parse_args():
 
     return opts
 
+
 def _positive_int(arg):
     return _int(arg, 'positive', lambda i: i > 0)
 
+
 def _non_negative_int(arg):
     return _int(arg, 'non-negative', lambda i: i >= 0)
+
 
 def _int(arg, kind, pred):
     desc = "requires {} integer, but found '{}'"
@@ -211,12 +214,14 @@ def _int(arg, kind, pred):
         raise _error(desc, kind, arg)
     return i
 
+
 def _case_insensitive_regex(arg):
     import re
     try:
         return re.compile(arg, re.IGNORECASE)
     except re.error as reason:
         raise _error("invalid regular expression: '{}', {}", arg, reason)
+
 
 def _error(desc, *args):
     msg = desc.format(*args)
