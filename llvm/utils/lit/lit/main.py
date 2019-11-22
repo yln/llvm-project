@@ -85,9 +85,14 @@ def main(builtin_params):
     run_tests(filtered_tests, lit_config, opts, len(discovered_tests))
     elapsed = time.time() - start
 
+    # TODO(yln): do this before and add assert "everything has result"
     for test in discovered_tests:
         if not test.result:
             test.setResult(lit.Test.Result(lit.Test.FILTERED))
+
+    if opts.timeTests:
+        # TODO(yln): executed tests
+        print_histogram(filtered_tests)
 
     print_results(discovered_tests, elapsed, opts)
 
@@ -247,6 +252,11 @@ def execute_in_tmp_dir(run, lit_config):
                 lit_config.warning("Failed to delete temp directory '%s'" % tmp_dir)
 
 
+def print_histogram(tests):
+    test_times = [(t.getFullName(), t.result.elapsed) for t in tests]
+    lit.util.printHistogram(test_times, title='Tests')
+
+
 result_groups = [
         # Successes
         (lit.Test.FILTERED,    'Filtered'),
@@ -272,10 +282,6 @@ def print_results(tests, elapsed, opts):
 
     for (code, label) in result_groups:
         print_group(code, label, by_code[code], opts)
-
-    if opts.timeTests and tests:
-        test_times = [(t.getFullName(), t.result.elapsed) for t in tests]
-        lit.util.printHistogram(test_times, title='Tests')
 
     print_summary(by_code, opts)
 
