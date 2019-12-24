@@ -257,8 +257,11 @@ static void PrintThread(const ReportThread *rt) {
     Printf(" '%s'", rt->name);
   char thrbuf[kThreadBufSize];
   const char *thread_status = rt->running ? "running" : "finished";
-  if (rt->thread_type == ThreadType::Worker) {
-    Printf(" (tid=%zu, %s) is a GCD worker thread\n", rt->os_id, thread_status);
+  ThreadType type = rt->thread_type;
+  if (type == ThreadType::GcdWorker || type == ThreadType::Mach) {
+    auto *type_str = (type == ThreadType::GcdWorker) ? "GCD worker" : "Mach";
+    Printf(" (tid=%zu, %s) is a %s thread\n", rt->os_id, thread_status,
+           type_str);
     Printf("\n");
     Printf("%s", d.Default());
     return;

@@ -29,9 +29,10 @@ enum ThreadStatus {
 };
 
 enum class ThreadType {
-  Regular, // Normal thread
-  Worker,  // macOS Grand Central Dispatch (GCD) worker thread
-  Fiber,   // Fiber
+  Regular,    // Normal thread
+  GcdWorker,  // Grand Central Dispatch (GCD) worker thread (Darwin)
+  Mach,       // Mach thread (Darwin)
+  Fiber,      // Fiber
 };
 
 // Generic thread context. Specific sanitizer tools may inherit from it.

@@ -190,6 +190,17 @@ void WriteMemoryProfile(char *buf, uptr buf_size, uptr nthread, uptr nlive) {
 #if !SANITIZER_GO
 void InitializeShadowMemoryPlatform() { }
 
+static void InitializeSpecialThread(pthread_t thread, ThreadType type) {
+  ThreadState *thr = cur_thread();
+  Processor *proc = ProcCreate();
+  ProcWire(proc, thr);
+  ThreadState *parent_thread_state = nullptr;  // No parent.
+  int tid = ThreadCreate(parent_thread_state, /*pc=*/0x0, (uptr)thread,
+                         /*detached=*/true);
+  CHECK_NE(tid, 0);
+  ThreadStart(thr, tid, GetTid(), type);
+}
+
 // On OS X, GCD worker threads are created without a call to pthread_create. We
 // need to properly register these threads with ThreadCreate and ThreadStart.
 // These threads don't have a parent thread, as they are created "spuriously".
@@ -200,31 +211,42 @@ void InitializeShadowMemoryPlatform() { }
 typedef void (*pthread_introspection_hook_t)(unsigned int event,
                                              pthread_t thread, void *addr,
                                              size_t size);
+enum {
+  PTHREAD_INTROSPECTION_THREAD_CREATE = 1,
+  PTHREAD_INTROSPECTION_THREAD_START,
+  PTHREAD_INTROSPECTION_THREAD_TERMINATE,
+  PTHREAD_INTROSPECTION_THREAD_DESTROY,
+};
 extern "C" pthread_introspection_hook_t pthread_introspection_hook_install(
     pthread_introspection_hook_t hook);
-static const uptr PTHREAD_INTROSPECTION_THREAD_CREATE = 1;
-static const uptr PTHREAD_INTROSPECTION_THREAD_TERMINATE = 3;
+
 static pthread_introspection_hook_t prev_pthread_introspection_hook;
 static void my_pthread_introspection_hook(unsigned int event, pthread_t thread,
                                           void *addr, size_t size) {
-  if (event == PTHREAD_INTROSPECTION_THREAD_CREATE) {
-    if (thread == pthread_self()) {
-      // The current thread is a newly created GCD worker thread.
-      ThreadState *thr = cur_thread();
-      Processor *proc = ProcCreate();
-      ProcWire(proc, thr);
-      ThreadState *parent_thread_state = nullptr;  // No parent.
-      int tid = ThreadCreate(parent_thread_state, 0, (uptr)thread, true);
-      CHECK_NE(tid, 0);
-      ThreadStart(thr, tid, GetTid(), ThreadType::Worker);
+  switch (event) {
+    case PTHREAD_INTROSPECTION_THREAD_CREATE: {
+      bool gcd_worker = (thread == pthread_self());
+      if (gcd_worker)
+        InitializeSpecialThread(thread, ThreadType::GcdWorker);
+      break;
     }
-  } else if (event == PTHREAD_INTROSPECTION_THREAD_TERMINATE) {
-    if (thread == pthread_self()) {
-      ThreadState *thr = cur_thread();
-      if (thr->tctx) {
+    case PTHREAD_INTROSPECTION_THREAD_START: {
+      CHECK(thread == pthread_self());
+      u32 tid = ThreadTid(cur_thread(), /*pc=*/0x0, (uptr)thread);
+      bool mach_thread = (tid == ThreadRegistry::kUnknownTid);
+      if (mach_thread)
+        InitializeSpecialThread(thread, ThreadType::Mach);
+      break;
+    }
+    case PTHREAD_INTROSPECTION_THREAD_TERMINATE:
+      CHECK(thread == pthread_self());
+      // TODO(yln): when would the thread not have a context?
+      // TODO(yln): also: maybe this is a better check than the one above
+      if (cur_thread()->tctx)
         DestroyThreadState();
-      }
-    }
+      break;
+    case PTHREAD_INTROSPECTION_THREAD_DESTROY:
+      break;
   }
 
   if (prev_pthread_introspection_hook != nullptr)
